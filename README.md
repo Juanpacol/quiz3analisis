@@ -27,6 +27,17 @@ pip install -r requirements.txt
 
 ## Ejecución
 
+### Opción 1: Archivo ejecutable (Recomendado)
+
+**En Windows:**
+- Haz doble clic en `run.bat`
+
+**En Mac/Linux:**
+- Abre terminal en la carpeta del proyecto
+- Ejecuta: `chmod +x run.sh && ./run.sh`
+
+### Opción 2: Comando manual
+
 Ejecuta la aplicación con:
 
 ```bash
