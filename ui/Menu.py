@@ -11,6 +11,7 @@ import streamlit as st  # noqa: E402
 from methods.GaussSeidel import GaussSeidel  # noqa: E402
 from methods.Interpolacion import InterpolacionLagrange  # noqa: E402
 from methods.Jacobi import Jacobi  # noqa: E402
+from methods.LU import LU  # noqa: E402
 from methods.NewtonRaphson import NewtonRaphson2x2  # noqa: E402
 from methods.SOR import SOR  # noqa: E402
 from utils.Validaciones import (  # noqa: E402
@@ -78,8 +79,8 @@ def mostrar_resultado_sistema(res):
 # Tabs
 # ──────────────────────────────────────────
 
-tab1, tab2, tab3, tab4, tab5 = st.tabs(
-    ["Jacobi", "Gauss-Seidel", "SOR", "Newton-Raphson", "Lagrange"]
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
+    ["Jacobi", "Gauss-Seidel", "SOR", "LU", "Newton-Raphson", "Lagrange"]
 )
 
 # ── Jacobi ──
@@ -176,20 +177,46 @@ with tab3:
         except Exception as e:
             st.error(str(e))
 
-# ── Newton-Raphson ──
+# ── LU ──
 with tab4:
+    st.subheader("Método LU")
+    st.caption(
+        "Descomposición LU con pivoteo parcial. No requiere diagonal dominante."
+    )
+    A = input_matriz("lu")
+    b = input_b("lu")
+
+    if st.button("Calcular", key="btn_lu"):
+        try:
+            res = LU(A, b)
+            col1, col2 = st.columns(2)
+            col1.metric("Iteraciones", res["iteraciones"])
+            col2.metric("Error final", f"{res['error']:.2e}")
+            sol = res["solucion"]
+            st.success(
+                f"x₁ = {sol[0]:.8f}   x₂ = {sol[1]:.8f}   x₃ = {sol[2]:.8f}"
+            )
+            if not res["converge"]:
+                st.warning(
+                    "El residual es alto. Verifique la solución."
+                )
+        except Exception as e:
+            st.error(str(e))
+
+# ── Newton-Raphson ──
+with tab5:
     st.subheader("Newton-Raphson 2×2")
     st.caption(
-        "Usa `x` e `y` como variables. Ejemplo: `x**2 + y - 1`"
+        "Usa `x` e `y` como variables. Soporta: exp, sqrt, sin, cos, tan, log (ln), log10, pi, e"
     )
 
     c1, c2 = st.columns(2)
-    f_str = c1.text_input("f(x, y)", value="x**2 + y - 1")
-    g_str = c2.text_input("g(x, y)", value="x + y**2 - 1")
-    dfdx_s = c1.text_input("∂f/∂x", value="2*x")
+    f_str = c1.text_input("f(x, y)", value="exp(x) + y - 1")
+    g_str = c2.text_input("g(x, y)", value="x + log(y) - 1")
+    dfdx_s = c1.text_input("∂f/∂x", value="exp(x)")
     dfdy_s = c2.text_input("∂f/∂y", value="1")
     dgdx_s = c1.text_input("∂g/∂x", value="1")
-    dgdy_s = c2.text_input("∂g/∂y", value="2*y")
+    dgdy_s = c2.text_input("∂g/∂y", value="1/y")
 
     c1, c2 = st.columns(2)
     x0 = c1.number_input("x₀", value=0.5)
@@ -204,7 +231,24 @@ with tab4:
 
     if st.button("Calcular", key="btn_newton"):
         try:
-            _env = {"__builtins__": {}, "abs": abs}
+            import math
+            
+            _env = {
+                "__builtins__": {},
+                "abs": abs,
+                "exp": math.exp,
+                "sqrt": math.sqrt,
+                "sin": math.sin,
+                "cos": math.cos,
+                "tan": math.tan,
+                "asin": math.asin,
+                "acos": math.acos,
+                "atan": math.atan,
+                "log": math.log,      # ln (logaritmo natural)
+                "log10": math.log10,  # log base 10
+                "pi": math.pi,
+                "e": math.e,
+            }
 
             def make_fn(expr):
                 return lambda x, y: eval(
@@ -237,7 +281,7 @@ with tab4:
             st.error(f"Error al evaluar las expresiones: {e}")
 
 # ── Lagrange ──
-with tab5:
+with tab6:
     st.subheader("Interpolación de Lagrange")
 
     n_pts = st.number_input(
